@@ -4,12 +4,16 @@
     <h1><%= listTitle %> List</h1> <!--  is a marker-->
 </div>
 <div class="box">
-    <%  for (var i=0; i<newListItems.length; i++){ %>
-    <div class="item">
-        <input type="checkbox">
-        <p> <%= newListItems[i] %> </p><!-- a new list is created in each loop-->
-    </div>
-    <%  } %>
+    <%  newListItems.forEach(function (newListItem) { %>  
+        <form action="/delete" method="POST">
+            <div class="item">
+                <input type="checkbox" name="checkbox" value="<%=newListItem._id%>" onChange="this.form.submit()"> <!--ticking the checkbock will tap the submit()-->
+                <p> <%= newListItem.name %> </p><!-- a new list is created in each loop-->
+            </div>
+
+        </form>           
+   
+    <%  }) %>
     <form action="/" method="POST">
         <input type="text" name="newItem" placeholder="New item" autocomplete="off">
         <button type="submit" name="list" value="<%= listTitle %>">+</button>
