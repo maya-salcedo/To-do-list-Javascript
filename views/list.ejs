@@ -1,22 +1,22 @@
 <%- include('header'); -%>
 
 <div class="box" id="heading">
-    <h1><%= listTitle %> List</h1> <!--  is a marker-->
+    <h1><%=listTitle%></h1> <!--  is a marker-->
 </div>
 <div class="box">
     <%  newListItems.forEach(function (newListItem) { %>  
         <form action="/delete" method="POST">
             <div class="item">
                 <input type="checkbox" name="checkbox" value="<%=newListItem._id%>" onChange="this.form.submit()"> <!--ticking the checkbock will tap the submit()-->
-                <p> <%= newListItem.name %> </p><!-- a new list is created in each loop-->
+                <p> <%=newListItem.name%> </p><!-- a new list is created in each loop-->
             </div>
-
+            <input type="hidden" name="listName" value="<%=listTitle%> "></input> <!--to get the lsit title-->
         </form>           
    
     <%  }) %>
     <form action="/" method="POST">
         <input type="text" name="newItem" placeholder="New item" autocomplete="off">
-        <button type="submit" name="list" value="<%= listTitle %>">+</button>
+        <button type="submit" name="list" value="<%=listTitle%>">+</button>
     </form>
 
 </div>

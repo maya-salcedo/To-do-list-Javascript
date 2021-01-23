@@ -1,13 +1,16 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const date = require(__dirname + "/date.js"); //require the local file module
 const mongoose = require("mongoose");
+
 
 const app = express();
 app.use(express.static("public")); 
 
 //connect to mongoose 
-mongoose.connect("mongodb://localhost:27017/todolistDB", {useNewUrlParser: true});
+mongoose.connect("mongodb://localhost:27017/todolistDB", 
+{useNewUrlParser: true, 
+    useUnifiedTopology: true,
+useFindAndModify: false});
 
 //make a schema
 const itemsSchema = {
@@ -48,8 +51,6 @@ app.use(bodyParser.urlencoded({extended: true})); //this code is needed to get b
 
 app.get("/", function (req, res) {
     
-    const day = date.getDate(); //calls the local module
-
     if (defaultItems.length === 0){
         Item.insertMany(defaultItems, function(err){
             if (err){
@@ -63,7 +64,7 @@ app.get("/", function (req, res) {
     } else {
         Item.find({}, function(err, toDoItems){
             res.render("list", {
-                listTitle: day,
+                listTitle: "Today",
                 newListItems:  toDoItems
             });  
     })
@@ -76,39 +77,74 @@ app.get("/", function (req, res) {
 app.post("/", function(req, res){
     
     const itemName = req.body.newItem; //access the input in newItem
+
+    const listName = req.body.list; //access the submit button with name="list"
     
     const item = new Item({
         name: itemName
     });
 
-    item.save();
-
-    res.redirect("/");
+    if (listName === "Today"){
+        item.save();
+        res.redirect("/");
+    } else {
+        List.findOne({name:listName}, function(err, foundList){
+            foundList.items.push(item);
+            foundList.save();
+            res.redirect("/" + listName);
+        });
+    }  
 });
 
 app.post("/delete", function(req, res){
     const checkedItemId = req.body.checkbox;
+    const listName = req.body.listName;
 
-    Item.deleteOne({_id: checkedItemId}, function(err){
-        if (err){
-            console.log(err);
-        } else {
-            res.redirect("/");
-        }
+    if (listName === "Today") {
+        Item.findByIdAndRemove(checkedItemId, function(err){
+            if (!err){
+                console.log("Successfully deleted checked item");
+                res.redirect("/");
+            }  
+        });
+    } else {
+        List.findOneAndUpdate(
+            {name: listName}, 
+            {$pull: {items: {_id: checkedItemId}}}, 
+            function(err, foundList){
+                if (!err){
+                    res.redirect("/" + listName);
+                }
+            });
+    }    
+});
 
-    })
-})
 
+//Express route parameters
 app.get("/:customListName", function(req, res){
     const customListName = req.params.customListName;
 
-    const list = new List({
-        name: customListName,
-        items: defaultItems
+    //find if the name of the custom list is existing
+    List.findOne({name: customListName}, function (err, foundList){
+        if (!err){
+            if (!foundList){
+                //create list if not existing
+                const list = new List({
+                    name: customListName,
+                    items: defaultItems
+                });
+                        
+                list.save();
+                res.redirect("/" + customListName);
+            } else {
+                //show an existing list
+                res.render("list", {
+                    listTitle: foundList.name,
+                    newListItems:foundList.items})
+            }
+        }
     });
-
-    list.save();
-}); //Express route parameters
+}); 
 
 app.get("/about", function(req, res){
     res.render("about");
